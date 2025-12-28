@@ -1,0 +1,14 @@
+{
+  "name": "gkelogs",
+  "version": "1.0.0",
+  "description": "CLI tool to fetch GKE container logs via gcloud with ADC",
+  "type": "module",
+  "bin": {
+    "gkelogs": "./gkelogs.ts"
+  },
+  "scripts": {
+    "start": "bun run gkelogs.ts"
+  },
+  "keywords": ["gke", "kubernetes", "logs", "gcloud", "cli"],
+  "license": "MIT"
+}
