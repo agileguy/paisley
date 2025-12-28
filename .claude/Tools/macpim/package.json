@@ -1,0 +1,13 @@
+{
+  "name": "macpim",
+  "version": "1.0.0",
+  "description": "Mac Personal Information Manager - CLI for emails and contacts",
+  "main": "macpim.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run macpim.ts",
+    "build": "swiftc -O contacts-helper.swift -o contacts-helper && swiftc -O mail-helper.swift -o mail-helper"
+  },
+  "author": "Dan Elliott",
+  "license": "MIT"
+}
