@@ -1,0 +1,14 @@
+{
+  "name": "maccal",
+  "version": "1.0.0",
+  "description": "CLI tool to fetch macOS Calendar events in JSON format",
+  "type": "module",
+  "bin": {
+    "maccal": "./maccal.ts"
+  },
+  "scripts": {
+    "start": "bun run maccal.ts"
+  },
+  "keywords": ["macos", "calendar", "events", "cli", "applescript"],
+  "license": "MIT"
+}
