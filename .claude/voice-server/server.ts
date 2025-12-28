@@ -9,8 +9,8 @@ import { homedir } from "os";
 import { join } from "path";
 import { existsSync } from "fs";
 
-// Load .env from user home directory
-const envPath = join(homedir(), '.env');
+// Load .env from ~/.claude directory
+const envPath = join(homedir(), '.claude', '.env');
 if (existsSync(envPath)) {
   const envContent = await Bun.file(envPath).text();
   envContent.split('\n').forEach(line => {
@@ -25,7 +25,7 @@ const PORT = parseInt(process.env.PORT || "8888");
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 if (!ELEVENLABS_API_KEY) {
-  console.error('⚠️  ELEVENLABS_API_KEY not found in ~/.env');
+  console.error('⚠️  ELEVENLABS_API_KEY not found in ~/.claude/.env');
   console.error('Add: ELEVENLABS_API_KEY=your_key_here');
 }
 
@@ -95,7 +95,7 @@ async function generateSpeech(text: string, voiceId: string): Promise<ArrayBuffe
     const errorText = await response.text();
     // Check for model-related errors
     if (errorText.includes('model') || response.status === 422) {
-      throw new Error(`ElevenLabs API error: Invalid model "${DEFAULT_MODEL}". Update ELEVENLABS_MODEL in ~/.env. See https://elevenlabs.io/docs/models`);
+      throw new Error(`ElevenLabs API error: Invalid model "${DEFAULT_MODEL}". Update ELEVENLABS_MODEL in ~/.claude/.env. See https://elevenlabs.io/docs/models`);
     }
     throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
   }
