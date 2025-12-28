@@ -1,0 +1,19 @@
+{
+  "user": {
+    "name": "Dan",
+    "email": "the.daddy.magoo@gmail.com"
+  },
+  "assistant": {
+    "name": "Paisley",
+    "color": "green"
+  },
+  "paths": {
+    "pai_dir": "/Users/de895996/.claude"
+  },
+  "voice": {
+    "port": 8888,
+    "enabled": true
+  },
+  "created": "2025-12-28T15:48:29.291Z",
+  "version": "1.0.0"
+}
