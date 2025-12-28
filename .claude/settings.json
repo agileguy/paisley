@@ -7,9 +7,9 @@
     "PAI_SIMPLE_COLORS": "Set to '1' to use basic ANSI colors in statusline instead of 24-bit RGB. Enable if you see garbled colors or display issues in your terminal. Default: 0 (use full color).",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "Maximum tokens for Claude responses. Higher values allow longer outputs but cost more."
   },
-  "_setupNote": "IMPORTANT: Run 'bash .claude/setup.sh' to automatically configure PAI_DIR. If you see hook errors mentioning '__HOME__', the setup script was not run or you need to manually change PAI_DIR below to your actual home directory path (e.g., /Users/john/.claude on macOS or /home/john/.claude on Linux).",
+  "_setupNote": "IMPORTANT: Run 'bash .claude/setup.sh' to automatically configure PAI_DIR. If you see hook errors mentioning '/Users/de895996', the setup script was not run or you need to manually change PAI_DIR below to your actual home directory path (e.g., /Users/john/.claude on macOS or /home/john/.claude on Linux).",
   "env": {
-    "PAI_DIR": "__HOME__/.claude",
+    "PAI_DIR": "/Users/de895996/.claude",
     "DA": "PAI",
     "PAI_SIMPLE_COLORS": "0",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000"
