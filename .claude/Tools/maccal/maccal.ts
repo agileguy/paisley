@@ -2,7 +2,7 @@
 /**
  * maccal - Mac Calendar CLI Tool
  *
- * Fetches calendar events from macOS Calendar.app via AppleScript.
+ * Fetches calendar events from macOS Calendar using EventKit via Swift helper.
  * Returns events in JSON format with calendar name included.
  *
  * Usage:
@@ -13,6 +13,8 @@
 
 import { $ } from "bun";
 import { parseArgs } from "util";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 interface CalendarEvent {
   id: string;
@@ -98,129 +100,82 @@ function parseUntilDuration(duration: string): Date {
   return endDate;
 }
 
-function formatDateForAppleScript(date: Date): string {
-  // Format: "January 1, 2025 at 12:00:00 AM"
-  return date.toLocaleString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
-
 async function getCalendarEvents(endDate: Date, calendarFilter?: string): Promise<CalendarEvent[]> {
-  const startDateStr = formatDateForAppleScript(new Date());
-  const endDateStr = formatDateForAppleScript(endDate);
+  const scriptDir = dirname(fileURLToPath(import.meta.url));
+  const helperBinary = join(scriptDir, "calendar-helper");
 
-  // AppleScript to fetch calendar events
-  const appleScript = `
-    use AppleScript version "2.4"
-    use scripting additions
-    use framework "Foundation"
+  const startISO = new Date().toISOString();
+  const endISO = endDate.toISOString();
 
-    set startDate to date "${startDateStr}"
-    set endDate to date "${endDateStr}"
-    set calFilter to "${calendarFilter || ""}"
-    set outputList to {}
-
-    tell application "Calendar"
-      set allCalendars to calendars
-      repeat with cal in allCalendars
-        set calName to name of cal
-
-        -- Apply calendar filter if specified
-        if calFilter is "" or calName contains calFilter then
-          try
-            set calEvents to (every event of cal whose start date ≥ startDate and start date ≤ endDate)
-            repeat with evt in calEvents
-              try
-                set evtId to uid of evt
-                set evtTitle to summary of evt
-                set evtStart to start date of evt
-                set evtEnd to end date of evt
-                set evtAllDay to allday event of evt
-
-                set evtLocation to ""
-                try
-                  set evtLocation to location of evt
-                  if evtLocation is missing value then set evtLocation to ""
-                end try
-
-                set evtNotes to ""
-                try
-                  set evtNotes to description of evt
-                  if evtNotes is missing value then set evtNotes to ""
-                end try
-
-                set evtUrl to ""
-                try
-                  set evtUrl to url of evt
-                  if evtUrl is missing value then set evtUrl to ""
-                end try
-
-                -- Format as pipe-delimited string for easy parsing
-                set evtRecord to evtId & "|" & evtTitle & "|" & calName & "|" & (evtStart as string) & "|" & (evtEnd as string) & "|" & evtAllDay & "|" & evtLocation & "|" & evtNotes & "|" & evtUrl
-                set end of outputList to evtRecord
-              end try
-            end repeat
-          end try
-        end if
-      end repeat
-    end tell
-
-    -- Join with newline
-    set AppleScript's text item delimiters to "
-"
-    return outputList as string
-  `;
+  const args = ["--start", startISO, "--end", endISO];
+  if (calendarFilter) {
+    args.push("--calendar", calendarFilter);
+  }
 
   try {
-    const result = await $`osascript -e ${appleScript}`.quiet();
+    const result = await $`${helperBinary} ${args}`.quiet();
     const output = result.stdout.toString().trim();
 
-    if (!output) {
+    if (!output || output === "[]") {
       return [];
     }
 
-    const events: CalendarEvent[] = [];
-    const lines = output.split("\n");
+    const parsed = JSON.parse(output);
 
-    for (const line of lines) {
-      if (!line.trim()) continue;
-
-      const parts = line.split("|");
-      if (parts.length >= 6) {
-        const [id, title, calendar, startDate, endDate, allDayStr, location, notes, url] = parts;
-
-        events.push({
-          id: id || "",
-          title: title || "",
-          calendar: calendar || "",
-          startDate: startDate || "",
-          endDate: endDate || "",
-          allDay: allDayStr === "true",
-          location: location || undefined,
-          notes: notes || undefined,
-          url: url || undefined,
-        });
-      }
+    // Check for error response
+    if (parsed.error) {
+      throw new Error(parsed.error);
     }
 
-    // Sort by start date
-    events.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-
-    return events;
+    return parsed as CalendarEvent[];
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message.includes("Calendar")) {
-        throw new Error("Unable to access Calendar.app. Make sure it's installed and you've granted terminal access to Calendar.");
+      if (error.message.includes("access denied") || error.message.includes("Calendar access")) {
+        throw new Error("Calendar access denied. Grant access in System Settings > Privacy & Security > Calendars");
+      }
+      // Try to parse JSON error from output
+      try {
+        const match = error.message.match(/\{[\s\S]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+        }
+      } catch {
+        // Ignore JSON parse errors
       }
     }
     throw error;
   }
+}
+
+function parseMacDate(dateStr: string): Date | null {
+  // Parse format: "Friday, January 2, 2026 at 6:15:00 PM"
+  // Note: macOS uses narrow no-break space (\u202f) before AM/PM
+  const match = dateStr.match(
+    /\w+, (\w+) (\d+), (\d+) at (\d+):(\d+):(\d+)[\s\u202f](AM|PM)/
+  );
+  if (!match) return null;
+
+  const [, month, day, year, hour, minute, second, ampm] = match;
+  const months: Record<string, number> = {
+    January: 0, February: 1, March: 2, April: 3, May: 4, June: 5,
+    July: 6, August: 7, September: 8, October: 9, November: 10, December: 11,
+  };
+
+  let h = parseInt(hour, 10);
+  if (ampm === "PM" && h !== 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+
+  return new Date(
+    parseInt(year, 10),
+    months[month],
+    parseInt(day, 10),
+    h,
+    parseInt(minute, 10),
+    parseInt(second, 10)
+  );
 }
 
 function formatPretty(events: CalendarEvent[]): void {
@@ -229,10 +184,20 @@ function formatPretty(events: CalendarEvent[]): void {
     return;
   }
 
+  // Sort events by start date
+  events.sort((a, b) => {
+    const dateA = parseMacDate(a.startDate);
+    const dateB = parseMacDate(b.startDate);
+    if (!dateA || !dateB) return 0;
+    return dateA.getTime() - dateB.getTime();
+  });
+
   let currentDate = "";
 
   for (const event of events) {
-    const startDate = new Date(event.startDate);
+    const startDate = parseMacDate(event.startDate);
+    if (!startDate) continue;
+
     const dateStr = startDate.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
