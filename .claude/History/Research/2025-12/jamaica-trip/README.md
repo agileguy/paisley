@@ -18,7 +18,7 @@ stylesheet:
 
 **Date:** 2025-12-28
 **Trip Dates:** December 30, 2025 - January 6, 2026
-**Travelers:** Dan, Sarah, Rachelle, Ada, Brooklyn (5 people)
+**Travelers:** Dan, Sarah, Rachelle, Arin, Brooklyn (5 people)
 **Destination:** Ocean Coral Spring Resort, Trelawny, Jamaica
 
 ---
