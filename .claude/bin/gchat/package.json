@@ -1,0 +1,16 @@
+{
+  "name": "gchat",
+  "version": "1.0.0",
+  "description": "Google Chat Webhook CLI - Send messages to GChat spaces",
+  "type": "module",
+  "bin": {
+    "gchat": "./gchat.ts"
+  },
+  "scripts": {
+    "help": "bun run gchat.ts --help"
+  },
+  "keywords": ["google-chat", "gchat", "webhook", "cli", "messaging"],
+  "author": "Daniel Elliott",
+  "license": "MIT",
+  "dependencies": {}
+}
