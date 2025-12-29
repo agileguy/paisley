@@ -31,6 +31,9 @@ interface Config {
 
 interface GChatTextMessage {
   text: string;
+  thread?: {
+    name: string;
+  };
 }
 
 interface GChatCardSection {
@@ -247,7 +250,7 @@ async function cmdCard(options: {
 }
 
 /**
- * Send a thread reply (appends to existing thread)
+ * Send a thread reply using custom thread key (groups related messages)
  */
 async function cmdThread(
   message: string,
@@ -293,6 +296,60 @@ async function cmdThread(
   }
 }
 
+/**
+ * Reply to an existing thread using thread name from previous response
+ */
+async function cmdReply(
+  message: string,
+  threadName: string,
+  webhookUrl?: string
+): Promise<void> {
+  if (!message || message.trim() === '') {
+    console.error('Error: Message is required');
+    process.exit(1);
+  }
+
+  if (!threadName) {
+    console.error('Error: --to is required');
+    console.error('Usage: gchat reply "Message" --to <thread-name>');
+    console.error('Thread name comes from previous message response: .thread.name');
+    process.exit(1);
+  }
+
+  const config = loadConfig(webhookUrl);
+
+  // Include thread name in request body to reply to existing thread
+  const payload: GChatTextMessage = {
+    text: message,
+    thread: {
+      name: threadName,
+    },
+  };
+
+  // Add messageReplyOption to URL
+  const separator = config.webhookUrl.includes('?') ? '&' : '?';
+  const replyUrl = `${config.webhookUrl}${separator}messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD`;
+
+  try {
+    const response = await fetch(replyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GChat API error (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error(`Error: ${(error as Error).message}`);
+    process.exit(1);
+  }
+}
+
 // ============================================================================
 // Help Documentation
 // ============================================================================
@@ -310,7 +367,8 @@ USAGE:
 COMMANDS:
   send <message>              Send a text message to the chat space
   card                        Send a rich card message
-  thread <message>            Send a reply to a thread
+  reply <message>             Reply to an existing thread (use --to)
+  thread <message>            Start/continue a named thread (use --thread)
   help, --help, -h            Show this help message
   version, --version, -v      Show version information
 
@@ -322,7 +380,8 @@ OPTIONS:
   --image <url>               Card header image URL
   --button-text <text>        Button label
   --button-url <url>          Button link URL
-  --thread <key>              Thread key for replies
+  --to <thread-name>          Thread name for reply (from previous .thread.name)
+  --thread <key>              Custom thread key for grouping messages
 
 EXAMPLES:
   # Send a simple message
@@ -337,8 +396,12 @@ EXAMPLES:
   # Send a card with a button
   gchat card --title "New PR" --text "Review needed" --button-text "View PR" --button-url "https://github.com/..."
 
-  # Reply to a thread
-  gchat thread "Update: Fixed!" --thread "build-notifications"
+  # Reply to existing thread (use thread.name from previous response)
+  gchat reply "Thanks!" --to "spaces/XXX/threads/YYY"
+
+  # Start/continue a named thread (messages with same key go to same thread)
+  gchat thread "Build started" --thread "build-123"
+  gchat thread "Build passed!" --thread "build-123"
 
 OUTPUT:
   All commands return JSON to stdout
@@ -462,6 +525,27 @@ async function main(): Promise<void> {
       }
 
       await cmdThread(message, threadKey, webhookUrl);
+      break;
+    }
+
+    case 'reply': {
+      const message = args[1] && !args[1].startsWith('-') ? args[1] : undefined;
+      const threadName = getArgValue(args, '--to');
+
+      if (!message) {
+        console.error('Error: Message is required');
+        console.error('Usage: gchat reply "Message" --to <thread-name>');
+        process.exit(1);
+      }
+
+      if (!threadName) {
+        console.error('Error: --to is required');
+        console.error('Usage: gchat reply "Message" --to <thread-name>');
+        console.error('Get thread name from previous response: .thread.name');
+        process.exit(1);
+      }
+
+      await cmdReply(message, threadName, webhookUrl);
       break;
     }
 
