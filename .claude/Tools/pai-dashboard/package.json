@@ -1,0 +1,9 @@
+{
+  "name": "pai-dashboard",
+  "version": "1.0.0",
+  "description": "PAI Usage Metrics Dashboard",
+  "scripts": {
+    "start": "bun run server.ts"
+  },
+  "dependencies": {}
+}
