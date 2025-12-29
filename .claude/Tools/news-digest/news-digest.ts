@@ -49,7 +49,7 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
   economy: ["economy", "market", "trade", "stock", "inflation", "bank", "dollar", "oil", "price", "deal", "business", "finance", "gdp", "growth"],
   climate: ["climate", "weather", "flood", "storm", "earthquake", "wildfire", "carbon", "pollution", "environmental", "hurricane", "drought", "emissions"],
   health: ["health", "covid", "vaccine", "disease", "hospital", "medical", "research", "scientist", "discovery", "medicine", "virus", "pandemic"],
-  tech: ["technology", "ai", "artificial intelligence", "software", "cyber", "hack", "data", "digital", "internet", "app", "startup", "tech"],
+  tech: [" ai ", " ai,", " ai.", "artificial intelligence", "openai", "chatgpt", "claude ai", "gemini ai", "machine learning", "neural network", "generative ai", "cybersecurity", "cyberattack", "hacker", "ransomware", "data breach", "silicon valley", "semiconductor", "chipmaker", "nvidia", "tesla", "spacex", "elon musk", "zuckerberg", "cryptocurrency", "bitcoin", "blockchain", "robotics", "self-driving", "quantum computing", "smartphone", "iphone", "big tech", "tech giant", "tech company", "satellite", "spacecraft", "rocket launch"],
   sports: ["football", "soccer", "basketball", "tennis", "olympics", "championship", "tournament", "match", "game", "player", "team", "afcon", "world cup"],
 };
 
