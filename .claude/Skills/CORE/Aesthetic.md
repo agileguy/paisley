@@ -302,3 +302,100 @@ code {
 ---
 
 **This is the PAI brand: Bold orange energy on sophisticated black, with gray depth and white clarity.**
+
+---
+
+## PDF Generation Styles
+
+When generating PDFs from markdown (using `md-to-pdf` or similar tools), apply these rules for professional output.
+
+### Universal PDF Stylesheet
+
+Save as `styles.css` alongside your markdown, or reference from a shared location:
+
+```css
+/* ===========================================
+   PAI Universal PDF Styles
+   Use with: bunx md-to-pdf file.md --stylesheet styles.css
+   =========================================== */
+
+/* Page Break Control - Keep headings with content */
+h1, h2, h3, h4, h5, h6 {
+  page-break-after: avoid;
+  page-break-inside: avoid;
+}
+
+/* Keep lists and tables with their preceding content */
+ul, ol, table {
+  page-break-before: avoid;
+  page-break-inside: avoid;
+}
+
+/* Table Styling - Left-justified headers */
+th {
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  text-align: left;
+}
+
+/* Keep table header rows together */
+thead {
+  display: table-header-group;
+}
+
+tbody {
+  page-break-inside: avoid;
+}
+
+/* Prevent orphans and widows */
+p {
+  orphans: 3;
+  widows: 3;
+}
+```
+
+### Usage
+
+**Method 1: External Stylesheet (Recommended)**
+```bash
+bunx md-to-pdf document.md --stylesheet /path/to/styles.css
+```
+
+**Method 2: YAML Frontmatter**
+```yaml
+---
+pdf_options:
+  margin: 20mm
+  format: Letter
+---
+```
+
+**Method 3: Manual Page Breaks**
+Insert where you need a forced page break:
+```html
+<div style="page-break-before: always;"></div>
+```
+
+### Key Rules
+
+| Rule | CSS Property | Purpose |
+|------|--------------|---------|
+| Keep headings with content | `page-break-after: avoid` | Headings never orphaned at page bottom |
+| Left-align table headers | `th { text-align: left }` | Professional, readable tables |
+| Avoid breaking tables | `page-break-inside: avoid` | Tables stay together when possible |
+| Control orphans/widows | `orphans: 3; widows: 3` | Minimum lines at page top/bottom |
+
+### Shared Stylesheet Location
+
+Store the universal stylesheet at:
+```
+~/.claude/Skills/CORE/pdf-styles.css
+```
+
+Reference in any markdown conversion:
+```bash
+bunx md-to-pdf document.md --stylesheet ~/.claude/Skills/CORE/pdf-styles.css
+```

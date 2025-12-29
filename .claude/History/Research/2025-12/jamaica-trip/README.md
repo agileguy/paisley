@@ -1,3 +1,19 @@
+---
+pdf_options:
+  margin: 20mm
+stylesheet:
+  - |
+    h1, h2, h3, h4 {
+      page-break-after: avoid;
+    }
+    ul, ol, table {
+      page-break-before: avoid;
+    }
+    h2, h3 {
+      page-break-inside: avoid;
+    }
+---
+
 # Jamaica Family Vacation Research
 
 **Date:** 2025-12-28
@@ -41,6 +57,8 @@
 | **Privilege Restaurant** | Exclusive (Privilege guests only) |
 
 **Tip:** Red Snapper beach grill is quieter at lunch than main buffet.
+
+<div style="page-break-before: always;"></div>
 
 ### Amenities
 - Large pools + lazy river + water slide

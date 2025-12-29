@@ -1,0 +1,41 @@
+/* ===========================================
+   PAI Universal PDF Styles
+   Use with: bunx md-to-pdf file.md --stylesheet ~/.claude/Skills/CORE/pdf-styles.css
+   =========================================== */
+
+/* Page Break Control - Keep headings with content */
+h1, h2, h3, h4, h5, h6 {
+  page-break-after: avoid;
+  page-break-inside: avoid;
+}
+
+/* Keep lists and tables with their preceding content */
+ul, ol, table {
+  page-break-before: avoid;
+  page-break-inside: avoid;
+}
+
+/* Table Styling - Left-justified headers */
+th {
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  text-align: left;
+}
+
+/* Keep table header rows together */
+thead {
+  display: table-header-group;
+}
+
+tbody {
+  page-break-inside: avoid;
+}
+
+/* Prevent orphans and widows */
+p {
+  orphans: 3;
+  widows: 3;
+}
