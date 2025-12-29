@@ -7,6 +7,7 @@
  */
 
 const RSS_FEEDS = {
+  // World News Sources
   bbc: {
     name: "BBC News",
     url: "https://feeds.bbci.co.uk/news/world/rss.xml",
@@ -26,6 +27,27 @@ const RSS_FEEDS = {
   dw: {
     name: "Deutsche Welle",
     url: "https://rss.dw.com/rdf/rss-en-world",
+  },
+  // Sports Sources
+  espn: {
+    name: "ESPN Soccer",
+    url: "https://www.espn.com/espn/rss/soccer/news",
+  },
+  bbcsport: {
+    name: "BBC Sport Football",
+    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
+  },
+  skysports: {
+    name: "Sky Sports Football",
+    url: "https://www.skysports.com/rss/12040",
+  },
+  guardian_football: {
+    name: "The Guardian Football",
+    url: "https://www.theguardian.com/football/rss",
+  },
+  goal: {
+    name: "Goal.com",
+    url: "https://www.goal.com/feeds/en/news",
   },
 };
 
@@ -50,7 +72,7 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
   climate: ["climate", "weather", "flood", "storm", "earthquake", "wildfire", "carbon", "pollution", "environmental", "hurricane", "drought", "emissions"],
   health: ["health", "covid", "vaccine", "disease", "hospital", "medical", "research", "scientist", "discovery", "medicine", "virus", "pandemic"],
   tech: [" ai ", " ai,", " ai.", "artificial intelligence", "openai", "chatgpt", "claude ai", "gemini ai", "machine learning", "neural network", "generative ai", "cybersecurity", "cyberattack", "hacker", "ransomware", "data breach", "silicon valley", "semiconductor", "chipmaker", "nvidia", "tesla", "spacex", "elon musk", "zuckerberg", "cryptocurrency", "bitcoin", "blockchain", "robotics", "self-driving", "quantum computing", "smartphone", "iphone", "big tech", "tech giant", "tech company", "satellite", "spacecraft", "rocket launch"],
-  sports: ["football", "soccer", "basketball", "tennis", "olympics", "championship", "tournament", "match", "game", "player", "team", "afcon", "world cup"],
+  sports: ["football", "soccer", "basketball", "tennis", "olympics", "championship", "tournament", "match", "game", "player", "team", "afcon", "world cup", "premier league", "la liga", "serie a", "bundesliga", "ligue 1", "champions league", "europa league", "transfer", "manager", "coach", "goal", "striker", "midfielder", "defender", "goalkeeper", "arsenal", "chelsea", "liverpool", "manchester", "barcelona", "real madrid", "juventus", "bayern", "psg", "newcastle", "tottenham", "spurs", "aston villa", "west ham", "everton", "brighton", "wolves", "nottingham forest", "bournemouth", "fulham", "crystal palace", "brentford", "inter milan", "ac milan", "napoli", "roma", "atletico madrid", "dortmund"],
 };
 
 const TOPIC_DISPLAY_NAMES: Record<string, string> = {
@@ -287,7 +309,9 @@ OPTIONS:
   --articles <n>     Number of supporting articles (default: 10)
   --json             Output in JSON format (default: pretty)
   --sources <list>   Comma-separated sources to include
-                     Options: bbc, guardian, npr, aljazeera, dw (default: all)
+                     World: bbc, guardian, npr, aljazeera, dw
+                     Sports: espn, bbcsport, skysports, guardian_football, goal
+                     (default: all)
   --topic <topic>    Filter by topic (optional)
                      Options: conflict, politics, economy, climate, health, tech, sports
   --help, -h         Show this help message
@@ -299,14 +323,21 @@ TOPICS:
   climate    Weather, environment, disasters
   health     Medicine, disease, research
   tech       Technology, AI, cyber, digital
-  sports     Football, basketball, tournaments
+  sports     Football/soccer, transfers, Premier League, Champions League
 
-SOURCES:
-  bbc        BBC News World
-  guardian   The Guardian World
-  npr        NPR World News
-  aljazeera  Al Jazeera
-  dw         Deutsche Welle
+SOURCES (World News):
+  bbc              BBC News World
+  guardian         The Guardian World
+  npr              NPR World News
+  aljazeera        Al Jazeera
+  dw               Deutsche Welle
+
+SOURCES (Sports):
+  espn             ESPN Soccer
+  bbcsport         BBC Sport Football
+  skysports        Sky Sports Football
+  guardian_football The Guardian Football
+  goal             Goal.com
 
 EXAMPLES:
   news-digest                          # Last 24h, pretty format
