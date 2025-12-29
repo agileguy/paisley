@@ -7,6 +7,32 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+        :root {
+            /* PAI Brand Colors - Orange, Black, Gray, White */
+            --pai-orange: #FF6B35;
+            --pai-orange-light: #FF8C61;
+            --pai-orange-dark: #E55A2B;
+            --pai-orange-glow: rgba(255, 107, 53, 0.4);
+
+            --pai-black: #000000;
+            --pai-black-soft: #0a0a0a;
+            --pai-black-rich: #111111;
+
+            --pai-gray-100: #f5f5f5;
+            --pai-gray-200: #e5e5e5;
+            --pai-gray-300: #d4d4d4;
+            --pai-gray-400: #a3a3a3;
+            --pai-gray-500: #737373;
+            --pai-gray-600: #525252;
+            --pai-gray-700: #404040;
+            --pai-gray-800: #262626;
+            --pai-gray-900: #171717;
+
+            --pai-white: #FFFFFF;
+            --pai-white-soft: #FAFAFA;
+            --pai-white-muted: #E0E0E0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,9 +41,9 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d0d1a 100%);
+            background: var(--pai-black);
             min-height: 100vh;
-            color: #fff;
+            color: var(--pai-white);
             overflow-x: hidden;
         }
 
@@ -49,36 +75,33 @@
         .title-slide h1 {
             font-size: clamp(3rem, 8vw, 6rem);
             font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--pai-orange);
             text-align: center;
             margin-bottom: 20px;
             animation: glow 3s ease-in-out infinite alternate;
         }
 
         @keyframes glow {
-            from { filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3)); }
-            to { filter: drop-shadow(0 0 40px rgba(118, 75, 162, 0.5)); }
+            from { text-shadow: 0 0 20px rgba(255, 107, 53, 0.3); }
+            to { text-shadow: 0 0 40px rgba(255, 107, 53, 0.5); }
         }
 
         .title-slide .subtitle {
             font-size: 1.5rem;
-            color: #a0a0c0;
+            color: var(--pai-gray-300);
             text-align: center;
             margin-bottom: 10px;
         }
 
         .title-slide .author {
             font-size: 1.1rem;
-            color: #8080a0;
+            color: var(--pai-gray-500);
             margin-bottom: 40px;
         }
 
         .greek-text {
             font-size: 2rem;
-            color: #667eea;
+            color: var(--pai-orange);
             margin-bottom: 30px;
             font-style: italic;
         }
@@ -89,30 +112,25 @@
             font-weight: 700;
             margin-bottom: 40px;
             text-align: center;
-            color: #fff;
+            color: var(--pai-white);
         }
 
         .highlight {
-            color: #667eea;
+            color: var(--pai-orange);
         }
 
         .problem-box {
-            background: rgba(255, 100, 100, 0.1);
-            border: 2px solid rgba(255, 100, 100, 0.3);
-            border-radius: 20px;
+            background: var(--pai-gray-900);
+            border: 2px solid var(--pai-gray-700);
+            border-left: 4px solid var(--pai-orange);
+            border-radius: 12px;
             padding: 40px;
             max-width: 800px;
             margin: 20px auto;
-            animation: pulse-red 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-red {
-            0%, 100% { box-shadow: 0 0 30px rgba(255, 100, 100, 0.2); }
-            50% { box-shadow: 0 0 50px rgba(255, 100, 100, 0.4); }
         }
 
         .problem-box h3 {
-            color: #ff6b6b;
+            color: var(--pai-orange);
             font-size: 1.5rem;
             margin-bottom: 20px;
         }
@@ -120,7 +138,7 @@
         .problem-box p {
             font-size: 1.2rem;
             line-height: 1.8;
-            color: #d0d0d0;
+            color: var(--pai-gray-300);
         }
 
         /* Framework visualization */
@@ -147,9 +165,9 @@
         }
 
         .chain-box {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-            border: 2px solid rgba(102, 126, 234, 0.4);
-            border-radius: 15px;
+            background: var(--pai-gray-900);
+            border: 2px solid var(--pai-gray-700);
+            border-radius: 12px;
             padding: 20px 40px;
             min-width: 200px;
             text-align: center;
@@ -157,24 +175,24 @@
         }
 
         .chain-box:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+            border-color: var(--pai-orange);
+            box-shadow: 0 0 25px rgba(255, 107, 53, 0.3);
         }
 
         .chain-box h4 {
             font-size: 1.3rem;
-            color: #667eea;
+            color: var(--pai-orange);
             margin-bottom: 8px;
         }
 
         .chain-box p {
             font-size: 0.9rem;
-            color: #a0a0c0;
+            color: var(--pai-gray-400);
         }
 
         .chain-arrow {
             font-size: 2rem;
-            color: #667eea;
+            color: var(--pai-orange);
             animation: bounce-down 1s ease-in-out infinite;
         }
 
@@ -185,21 +203,21 @@
 
         /* Quote box */
         .quote-box {
-            background: rgba(102, 126, 234, 0.1);
-            border-left: 4px solid #667eea;
+            background: var(--pai-gray-900);
+            border-left: 4px solid var(--pai-orange);
             padding: 30px 40px;
             max-width: 800px;
             margin: 30px auto;
             font-size: 1.4rem;
             font-style: italic;
-            color: #d0d0e0;
+            color: var(--pai-gray-200);
             line-height: 1.8;
         }
 
         .quote-author {
             font-style: normal;
             font-size: 1rem;
-            color: #8080a0;
+            color: var(--pai-gray-500);
             margin-top: 15px;
         }
 
@@ -213,8 +231,9 @@
         }
 
         .comparison-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
+            background: var(--pai-gray-900);
+            border: 1px solid var(--pai-gray-700);
+            border-radius: 16px;
             padding: 30px;
             text-align: center;
             transition: all 0.3s ease;
@@ -222,15 +241,16 @@
 
         .comparison-card:hover {
             transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--pai-orange);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.2);
         }
 
         .comparison-card.old {
-            border: 2px solid rgba(255, 100, 100, 0.3);
+            border-left: 4px solid var(--pai-gray-500);
         }
 
         .comparison-card.new {
-            border: 2px solid rgba(100, 255, 150, 0.3);
+            border-left: 4px solid var(--pai-orange);
         }
 
         .comparison-card h4 {
@@ -238,34 +258,35 @@
             margin-bottom: 15px;
         }
 
-        .comparison-card.old h4 { color: #ff6b6b; }
-        .comparison-card.new h4 { color: #6bffa0; }
+        .comparison-card.old h4 { color: var(--pai-gray-400); }
+        .comparison-card.new h4 { color: var(--pai-orange); }
 
         .comparison-card p {
-            color: #b0b0c0;
+            color: var(--pai-gray-400);
             line-height: 1.6;
         }
 
         /* Key insight */
         .key-insight {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(240, 147, 251, 0.2) 100%);
-            border: 2px solid rgba(240, 147, 251, 0.4);
-            border-radius: 25px;
+            background: var(--pai-gray-900);
+            border: 2px solid var(--pai-orange);
+            border-radius: 20px;
             padding: 50px;
             max-width: 800px;
             margin: 40px auto;
             text-align: center;
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.2);
         }
 
         .key-insight h3 {
             font-size: 1.8rem;
-            color: #f093fb;
+            color: var(--pai-orange);
             margin-bottom: 20px;
         }
 
         .key-insight p {
             font-size: 1.3rem;
-            color: #e0e0f0;
+            color: var(--pai-gray-200);
             line-height: 1.8;
         }
 
@@ -275,7 +296,7 @@
             top: 0;
             left: 0;
             height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            background: linear-gradient(90deg, var(--pai-orange), var(--pai-orange-light));
             width: 0%;
             transition: width 0.3s ease;
             z-index: 100;
@@ -297,32 +318,33 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--pai-gray-600);
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .nav-dot.active {
-            background: #667eea;
+            background: var(--pai-orange);
             transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
         }
 
         .nav-dot:hover {
-            background: #764ba2;
+            background: var(--pai-orange-light);
         }
 
         /* Floating elements */
         .floating-shape {
             position: fixed;
             border-radius: 50%;
-            opacity: 0.1;
+            opacity: 0.08;
             pointer-events: none;
+            background: var(--pai-orange);
         }
 
         .shape-1 {
             width: 300px;
             height: 300px;
-            background: #667eea;
             top: -100px;
             right: -100px;
             animation: float 8s ease-in-out infinite;
@@ -331,7 +353,6 @@
         .shape-2 {
             width: 200px;
             height: 200px;
-            background: #f093fb;
             bottom: -50px;
             left: -50px;
             animation: float 10s ease-in-out infinite reverse;
@@ -345,8 +366,8 @@
         /* CTA */
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--pai-orange);
+            color: var(--pai-black);
             padding: 18px 45px;
             border-radius: 50px;
             font-size: 1.2rem;
@@ -354,12 +375,24 @@
             text-decoration: none;
             margin-top: 30px;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
         }
 
         .cta-button:hover {
+            background: var(--pai-orange-light);
             transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.5);
+        }
+
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid var(--pai-orange);
+            color: var(--pai-orange);
+            margin-left: 20px;
+        }
+
+        .cta-button.secondary:hover {
+            background: rgba(255, 107, 53, 0.1);
         }
 
         /* Animation delays for chain items */
@@ -381,13 +414,17 @@
         .footer {
             text-align: center;
             padding: 40px;
-            color: #606080;
+            color: var(--pai-gray-600);
             font-size: 0.9rem;
         }
 
         .footer a {
-            color: #667eea;
+            color: var(--pai-orange);
             text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--pai-orange-light);
         }
     </style>
 </head>
@@ -405,9 +442,9 @@
         <h1>The TELOS Method</h1>
         <p class="subtitle">A Framework for Finding Your Purpose</p>
         <p class="author">Created by Dan Miessler</p>
-        <div style="margin-top: 40px; color: #8080a0;">
+        <div style="margin-top: 40px; color: var(--pai-gray-500);">
             <p>Scroll to explore</p>
-            <div style="font-size: 2rem; animation: bounce-down 1s ease-in-out infinite;">↓</div>
+            <div style="font-size: 2rem; color: var(--pai-orange); animation: bounce-down 1s ease-in-out infinite;">↓</div>
         </div>
     </section>
 
@@ -429,11 +466,11 @@
         <h2>What is <span class="highlight">Telos</span>?</h2>
         <div class="comparison-grid">
             <div class="comparison-card">
-                <h4 style="color: #667eea;">Greek Philosophy</h4>
+                <h4 style="color: var(--pai-orange);">Greek Philosophy</h4>
                 <p><strong>Telos (τέλος)</strong> is Aristotle's concept of ultimate purpose—the natural end toward which something aims.</p>
             </div>
             <div class="comparison-card">
-                <h4 style="color: #f093fb;">Eudaimonia</h4>
+                <h4 style="color: var(--pai-orange-light);">Eudaimonia</h4>
                 <p>Not fleeting happiness, but <strong>deep human flourishing</strong> that comes from living according to your purpose.</p>
             </div>
         </div>
@@ -446,7 +483,7 @@
     <!-- Slide 4: The Framework -->
     <section class="slide content-slide" data-slide="3">
         <h2>The <span class="highlight">Framework</span></h2>
-        <p style="color: #a0a0c0; margin-bottom: 30px; font-size: 1.2rem;">Everything traces back to problems worth solving</p>
+        <p style="color: var(--pai-gray-400); margin-bottom: 30px; font-size: 1.2rem;">Everything traces back to problems worth solving</p>
         <div class="framework-chain">
             <div class="chain-item">
                 <div class="chain-box">
@@ -522,14 +559,14 @@
     <section class="slide content-slide" data-slide="5">
         <h2>How to <span class="highlight">Use It</span></h2>
         <div class="comparison-grid" style="grid-template-columns: 1fr;">
-            <div class="comparison-card" style="border-color: rgba(102, 126, 234, 0.4); text-align: left;">
-                <h4 style="color: #667eea; font-size: 1.4rem; margin-bottom: 25px;">Create Your Telos File</h4>
+            <div class="comparison-card" style="border-left: 4px solid var(--pai-orange); text-align: left;">
+                <h4 style="color: var(--pai-orange); font-size: 1.4rem; margin-bottom: 25px;">Create Your Telos File</h4>
                 <p style="font-size: 1.1rem; line-height: 2;">
-                    <strong>1.</strong> Identify 2-3 problems that genuinely bother you about the world<br>
-                    <strong>2.</strong> Define your mission based on solving those problems<br>
-                    <strong>3.</strong> Set specific goals that support your mission<br>
-                    <strong>4.</strong> Map your current projects back to your goals<br>
-                    <strong>5.</strong> Maintain it as a living document
+                    <strong style="color: var(--pai-orange);">1.</strong> Identify 2-3 problems that genuinely bother you about the world<br>
+                    <strong style="color: var(--pai-orange);">2.</strong> Define your mission based on solving those problems<br>
+                    <strong style="color: var(--pai-orange);">3.</strong> Set specific goals that support your mission<br>
+                    <strong style="color: var(--pai-orange);">4.</strong> Map your current projects back to your goals<br>
+                    <strong style="color: var(--pai-orange);">5.</strong> Maintain it as a living document
                 </p>
             </div>
         </div>
@@ -546,11 +583,13 @@
             <h3>The Question That Matters</h3>
             <p>If you can't trace your daily work back to a problem you care about solving, why are you doing it?</p>
         </div>
-        <p style="color: #a0a0c0; font-size: 1.2rem; margin-top: 30px; text-align: center;">
+        <p style="color: var(--pai-gray-400); font-size: 1.2rem; margin-top: 30px; text-align: center;">
             Define your purpose. Map your actions. Live with intention.
         </p>
-        <a href="https://danielmiessler.com/telos/" target="_blank" class="cta-button">Explore the Telos Framework →</a>
-        <a href="https://github.com/danielmiessler/Telos" target="_blank" class="cta-button" style="margin-left: 20px; background: linear-gradient(135deg, #333 0%, #555 100%);">View on GitHub →</a>
+        <div style="margin-top: 30px;">
+            <a href="https://danielmiessler.com/telos/" target="_blank" class="cta-button">Explore the Framework</a>
+            <a href="https://github.com/danielmiessler/Telos" target="_blank" class="cta-button secondary">View on GitHub</a>
+        </div>
     </section>
 
     <footer class="footer">
