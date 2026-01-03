@@ -1,0 +1,14 @@
+{
+  "name": "yubicheck",
+  "version": "1.0.0",
+  "description": "Check for YubiKey USB presence",
+  "type": "module",
+  "bin": {
+    "yubicheck": "./yubicheck.ts"
+  },
+  "scripts": {
+    "start": "bun run yubicheck.ts"
+  },
+  "author": "Dan Elliott",
+  "license": "MIT"
+}
