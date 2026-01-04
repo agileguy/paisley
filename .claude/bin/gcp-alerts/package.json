@@ -1,0 +1,23 @@
+{
+  "name": "gcp-alerts",
+  "version": "1.0.0",
+  "description": "Sync GCP alerting policies between projects using ADC authentication",
+  "type": "module",
+  "bin": {
+    "gcp-alerts": "./gcp-alerts.ts"
+  },
+  "scripts": {
+    "start": "bun run gcp-alerts.ts"
+  },
+  "dependencies": {
+    "@google-cloud/monitoring": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "author": "Dan Elliott",
+  "license": "MIT"
+}
