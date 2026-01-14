@@ -1,8 +1,8 @@
-# Session Summary: Amazon Research & CLI Help
+# Session Summary: Amazon Research & GCP Alerts Enhancement
 
 **Date:** 2026-01-13
-**Duration:** Short session
-**Type:** Research & Reference
+**Duration:** Medium session
+**Type:** Research, Reference & Development
 
 ## Tasks Completed
 
@@ -60,9 +60,40 @@ gcp-alerts delete <project-id> <policy-name>    # Delete policy
 
 ---
 
+### 4. GCP Alerts CLI Enhancement: --confirm Flag
+**Request:** Add interactive confirmation mode to gcp-alerts tool
+
+**Implementation:** Added `--confirm` (or `-c`) flag that prompts user before each change
+
+**Changes Made:**
+- Added `promptConfirm()` function using Bun's console iterator for stdin
+- Updated `syncPolicies()` to prompt before each policy creation
+- Updated `delete` command to prompt before deletion
+- Added examples to help text
+
+**New Usage:**
+```bash
+# Sync with confirmation prompt for each policy
+gcp-alerts sync source-project dest-project --confirm
+
+# Delete with confirmation
+gcp-alerts delete my-project "Alert Name" --confirm
+```
+
+**Behavior:**
+- Prompts `[y/N]` before each change
+- Default is No (just press Enter to skip)
+- Skipped policies are tracked in results
+
+**Commit:** `2ef3ad2 Add --confirm flag to gcp-alerts for interactive confirmation`
+
+---
+
 ## Capture for Future Reference
 
 - Skylight Calendar 15" power specs: 12V 2A, 5.5x2.1mm barrel, center positive
 - gcp-alerts CLI location: `.claude/bin/gcp-alerts/gcp-alerts.ts`
+- gcp-alerts options: `--name`, `--dry-run`, `--confirm`, `--json`, `--force`
 - For finest hot tub debris, search "silt net" not just "skimmer"
 - Amazon.ca often hides prices until added to cart
+- Bun stdin reading: `for await (const line of console)` pattern
