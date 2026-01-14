@@ -2,11 +2,11 @@
 /**
  * gcp-alerts - Sync GCP alerting policies between projects
  *
- * Uses Application Default Credentials (ADC) for authentication.
+ * Uses Application Default Credentials (ADC) for authentication via REST API.
  * Run `gcloud auth application-default login` to authenticate.
+ *
+ * Note: Uses REST API instead of gRPC client due to bun + gRPC compatibility issues.
  */
-
-import { AlertPolicyServiceClient } from "@google-cloud/monitoring";
 
 // Types
 interface AlertPolicy {
@@ -24,7 +24,7 @@ interface AlertPolicy {
     conditionPrometheusQueryLanguage?: unknown;
   }> | null;
   combiner?: string | number | null;
-  enabled?: { value?: boolean | null } | null;
+  enabled?: boolean | null;
   validity?: unknown;
   notificationChannels?: string[] | null;
   creationRecord?: unknown;
@@ -89,6 +89,74 @@ EXAMPLES:
   gcp-alerts delete my-project "Old Alert Policy" --confirm
 `;
 
+const BASE_URL = "https://monitoring.googleapis.com/v3";
+
+// Cache access token for reuse
+let cachedToken: string | null = null;
+
+// Get access token from gcloud
+async function getAccessToken(): Promise<string> {
+  if (cachedToken) return cachedToken;
+
+  const proc = Bun.spawn(["gcloud", "auth", "application-default", "print-access-token"], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const output = await new Response(proc.stdout).text();
+  const exitCode = await proc.exited;
+
+  if (exitCode !== 0) {
+    const stderr = await new Response(proc.stderr).text();
+    throw new Error(`Failed to get access token: ${stderr}`);
+  }
+
+  cachedToken = output.trim();
+  return cachedToken;
+}
+
+// Make authenticated REST API request
+async function apiRequest<T>(
+  method: "GET" | "POST" | "DELETE",
+  path: string,
+  body?: unknown
+): Promise<T> {
+  const token = await getAccessToken();
+  const url = `${BASE_URL}${path}`;
+
+  const options: RequestInit = {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  };
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    const text = await response.text();
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const errorJson = JSON.parse(text);
+      errorMessage = errorJson.error?.message || errorMessage;
+    } catch {
+      errorMessage = text || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+
+  // DELETE returns empty response
+  if (method === "DELETE") {
+    return {} as T;
+  }
+
+  return response.json();
+}
+
 // Prompt user for confirmation
 async function promptConfirm(message: string): Promise<boolean> {
   process.stdout.write(`${message} [y/N] `);
@@ -137,23 +205,22 @@ function parseArgs(): {
   };
 }
 
-// Create monitoring client (uses ADC automatically)
-function createClient(): AlertPolicyServiceClient {
-  return new AlertPolicyServiceClient();
-}
-
-// List all alerting policies in a project
+// List all alerting policies in a project (with pagination)
 async function listPolicies(projectId: string): Promise<AlertPolicy[]> {
-  const client = createClient();
-  const projectName = `projects/${projectId}`;
+  const allPolicies: AlertPolicy[] = [];
+  let pageToken: string | undefined;
 
-  try {
-    const [policies] = await client.listAlertPolicies({ name: projectName });
-    return policies as AlertPolicy[];
-  } catch (error) {
-    const err = error as Error;
-    throw new Error(`Failed to list policies for ${projectId}: ${err.message}`);
-  }
+  do {
+    const path = `/projects/${projectId}/alertPolicies${pageToken ? `?pageToken=${pageToken}` : ""}`;
+    const response = await apiRequest<{ alertPolicies?: AlertPolicy[]; nextPageToken?: string }>("GET", path);
+
+    if (response.alertPolicies) {
+      allPolicies.push(...response.alertPolicies);
+    }
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  return allPolicies;
 }
 
 // Get policy by display name
@@ -170,11 +237,8 @@ async function createPolicy(
   projectId: string,
   sourcePolicy: AlertPolicy
 ): Promise<AlertPolicy> {
-  const client = createClient();
-  const projectName = `projects/${projectId}`;
-
   // Prepare the policy for creation (remove source-specific fields)
-  const newPolicy: AlertPolicy = {
+  const newPolicy: Partial<AlertPolicy> = {
     displayName: sourcePolicy.displayName,
     documentation: sourcePolicy.documentation,
     userLabels: sourcePolicy.userLabels,
@@ -195,16 +259,8 @@ async function createPolicy(
     // For now, we skip them - they would need separate handling
   };
 
-  try {
-    const [created] = await client.createAlertPolicy({
-      name: projectName,
-      alertPolicy: newPolicy as Parameters<typeof client.createAlertPolicy>[0]["alertPolicy"],
-    });
-    return created as AlertPolicy;
-  } catch (error) {
-    const err = error as Error;
-    throw new Error(`Failed to create policy: ${err.message}`);
-  }
+  const path = `/projects/${projectId}/alertPolicies`;
+  return apiRequest<AlertPolicy>("POST", path, newPolicy);
 }
 
 // Delete a policy by display name
@@ -212,8 +268,6 @@ async function deletePolicy(
   projectId: string,
   displayName: string
 ): Promise<void> {
-  const client = createClient();
-
   // Find the policy by display name
   const policy = await getPolicyByDisplayName(projectId, displayName);
   if (!policy) {
@@ -224,12 +278,9 @@ async function deletePolicy(
     throw new Error(`Policy "${displayName}" has no resource name`);
   }
 
-  try {
-    await client.deleteAlertPolicy({ name: policy.name });
-  } catch (error) {
-    const err = error as Error;
-    throw new Error(`Failed to delete policy: ${err.message}`);
-  }
+  // Extract the policy path from the full name (projects/xxx/alertPolicies/yyy)
+  const policyPath = policy.name.replace("projects/", "/projects/");
+  await apiRequest<void>("DELETE", policyPath);
 }
 
 // Sync policies from source to destination
@@ -311,7 +362,7 @@ async function syncPolicies(
 
 // Format policy for display
 function formatPolicy(policy: AlertPolicy): string {
-  const enabled = policy.enabled?.value !== false ? "enabled" : "disabled";
+  const enabled = policy.enabled !== false ? "enabled" : "disabled";
   const conditions = policy.conditions?.length || 0;
   return `${policy.displayName} (${conditions} conditions, ${enabled})`;
 }
