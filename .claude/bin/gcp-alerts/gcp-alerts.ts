@@ -52,6 +52,7 @@ USAGE:
 OPTIONS:
   --name       Sync only a specific policy by display name
   --dry-run    Show what would be done without making changes
+  --confirm    Prompt for confirmation before each change
   --json       Output in JSON format
   --force      Overwrite existing policies with same display name
 
@@ -80,20 +81,38 @@ EXAMPLES:
 
   # Output as JSON
   gcp-alerts list my-project --json
+
+  # Sync with confirmation prompt for each policy
+  gcp-alerts sync my-source-project my-dest-project --confirm
+
+  # Delete with confirmation
+  gcp-alerts delete my-project "Old Alert Policy" --confirm
 `;
+
+// Prompt user for confirmation
+async function promptConfirm(message: string): Promise<boolean> {
+  process.stdout.write(`${message} [y/N] `);
+
+  for await (const line of console) {
+    const answer = line.trim().toLowerCase();
+    return answer === "y" || answer === "yes";
+  }
+  return false;
+}
 
 // Parse command line arguments
 function parseArgs(): {
   command: string;
   args: string[];
-  flags: { dryRun: boolean; json: boolean; force: boolean; help: boolean; name: string | null };
+  flags: { dryRun: boolean; json: boolean; force: boolean; help: boolean; confirm: boolean; name: string | null };
 } {
   const args = process.argv.slice(2);
-  const flags: { dryRun: boolean; json: boolean; force: boolean; help: boolean; name: string | null } = {
+  const flags: { dryRun: boolean; json: boolean; force: boolean; help: boolean; confirm: boolean; name: string | null } = {
     dryRun: false,
     json: false,
     force: false,
     help: false,
+    confirm: false,
     name: null,
   };
 
@@ -104,6 +123,7 @@ function parseArgs(): {
     if (arg === "--dry-run") flags.dryRun = true;
     else if (arg === "--json") flags.json = true;
     else if (arg === "--force") flags.force = true;
+    else if (arg === "--confirm" || arg === "-c") flags.confirm = true;
     else if (arg === "--help" || arg === "-h") flags.help = true;
     else if (arg === "--name" && i + 1 < args.length) {
       flags.name = args[++i];
@@ -218,6 +238,7 @@ async function syncPolicies(
   destProject: string,
   dryRun: boolean,
   force: boolean,
+  confirm: boolean,
   policyName: string | null = null
 ): Promise<SyncResult> {
   const result: SyncResult = {
@@ -262,6 +283,16 @@ async function syncPolicies(
       result.created.push(displayName);
       console.error(`  WOULD CREATE: "${displayName}"`);
       continue;
+    }
+
+    // Prompt for confirmation if --confirm flag is set
+    if (confirm) {
+      const confirmed = await promptConfirm(`  Create policy "${displayName}" in ${destProject}?`);
+      if (!confirmed) {
+        result.skipped.push(displayName);
+        console.error(`  SKIPPED: "${displayName}" (user declined)`);
+        continue;
+      }
     }
 
     try {
@@ -343,6 +374,7 @@ async function main() {
         console.log(`  Destination: ${destProject}`);
         if (flags.name) console.log(`  Policy: "${flags.name}"`);
         if (flags.dryRun) console.log(`  Mode: DRY RUN`);
+        if (flags.confirm) console.log(`  Mode: INTERACTIVE`);
         if (flags.force) console.log(`  Force: enabled`);
         console.log("");
 
@@ -351,6 +383,7 @@ async function main() {
           destProject,
           flags.dryRun,
           flags.force,
+          flags.confirm,
           flags.name
         );
 
@@ -392,6 +425,15 @@ async function main() {
             console.log(JSON.stringify({ dryRun: true, policy: policyName, project: projectId }, null, 2));
           }
           break;
+        }
+
+        // Prompt for confirmation if --confirm flag is set
+        if (flags.confirm) {
+          const confirmed = await promptConfirm(`Delete policy "${policyName}" from ${projectId}?`);
+          if (!confirmed) {
+            console.log(`Cancelled: "${policyName}" not deleted`);
+            break;
+          }
         }
 
         console.log(`Deleting policy "${policyName}" from ${projectId}...`);
