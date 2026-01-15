@@ -57,6 +57,12 @@
 - Retrieved next 2 weeks of events
 - Upcoming: Vancouver trip Jan 22-27 for The Offspring concert at BC Place
 
+### 9. GitHub Repos Cleanup
+- Listed repos with commits in last 6 months via `gh` CLI
+- Cloned active repos to `~/repos/`: cli-setup, code-assistant, lifecoach, logview
+- Removed unused repos: calendar-mcp, cards, game-time, mcp-gke-log-server, three-stooges
+- Removed old `~/pai` directory
+
 ---
 
 ## Key Files Modified
