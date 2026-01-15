@@ -1,0 +1,10 @@
+# Credentials - NEVER commit
+.env
+credentials.json
+token.json
+
+# Dependencies
+node_modules/
+
+# Bun
+bun.lock
