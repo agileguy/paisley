@@ -26,6 +26,19 @@ import * as os from 'os';
 const PROMETHEUS_URL = 'https://prometheus.agileguy.ca/api/v1/write';
 const HOSTNAME = os.hostname().split('.')[0];
 
+// Absolute paths for cron environment compatibility
+const CMD = {
+  top: '/usr/bin/top',
+  vmstat: '/usr/bin/vm_stat',
+  df: '/bin/df',
+  netstat: '/usr/sbin/netstat',
+  pmset: '/usr/bin/pmset',
+  sysctl: '/usr/sbin/sysctl',
+  ps: '/bin/ps',
+  systemProfiler: '/usr/sbin/system_profiler',
+  grep: '/usr/bin/grep',
+};
+
 // Protobuf schema for Prometheus remote write
 const protoSchema = `
 syntax = "proto3";
@@ -69,7 +82,7 @@ function getCpuMetrics(): Metric[] {
   const metrics: Metric[] = [];
 
   // Get CPU usage from top
-  const topOutput = exec("top -l 1 -n 0 | grep 'CPU usage'");
+  const topOutput = exec(`${CMD.top} -l 1 -n 0 | ${CMD.grep} 'CPU usage'`);
   const cpuMatch = topOutput.match(/(\d+\.?\d*)% user.*?(\d+\.?\d*)% sys.*?(\d+\.?\d*)% idle/);
 
   if (cpuMatch) {
@@ -108,7 +121,7 @@ function getMemoryMetrics(): Metric[] {
   const metrics: Metric[] = [];
 
   // Get memory info from vm_stat
-  const vmstat = exec('vm_stat');
+  const vmstat = exec(CMD.vmstat);
   const pageSize = 16384; // macOS page size (usually 16KB on Apple Silicon)
 
   const parsePages = (pattern: RegExp): number => {
@@ -182,7 +195,7 @@ function getDiskMetrics(): Metric[] {
   const metrics: Metric[] = [];
 
   // Get disk usage from df
-  const dfOutput = exec('df -k');
+  const dfOutput = exec(`${CMD.df} -k`);
   const lines = dfOutput.split('\n').slice(1);
 
   for (const line of lines) {
@@ -267,7 +280,7 @@ function getNetworkMetrics(): Metric[] {
   const metrics: Metric[] = [];
 
   // Get network stats from netstat
-  const netstatOutput = exec('netstat -ib');
+  const netstatOutput = exec(`${CMD.netstat} -ib`);
   const lines = netstatOutput.split('\n').slice(1);
 
   const seenInterfaces = new Set<string>();
@@ -312,7 +325,7 @@ function getBatteryMetrics(): Metric[] {
   const metrics: Metric[] = [];
 
   // Get battery info from pmset
-  const pmsetOutput = exec('pmset -g batt');
+  const pmsetOutput = exec(`${CMD.pmset} -g batt`);
 
   // Parse percentage
   const percentMatch = pmsetOutput.match(/(\d+)%/);
@@ -341,7 +354,7 @@ function getBatteryMetrics(): Metric[] {
   });
 
   // Get cycle count from system_profiler
-  const batteryInfo = exec('system_profiler SPPowerDataType 2>/dev/null | grep "Cycle Count"');
+  const batteryInfo = exec(`${CMD.systemProfiler} SPPowerDataType 2>/dev/null | ${CMD.grep} "Cycle Count"`);
   const cycleMatch = batteryInfo.match(/Cycle Count:\s*(\d+)/);
   if (cycleMatch) {
     metrics.push({
@@ -352,7 +365,7 @@ function getBatteryMetrics(): Metric[] {
   }
 
   // Get battery health
-  const healthInfo = exec('system_profiler SPPowerDataType 2>/dev/null | grep "Condition"');
+  const healthInfo = exec(`${CMD.systemProfiler} SPPowerDataType 2>/dev/null | ${CMD.grep} "Condition"`);
   const isHealthy = healthInfo.includes('Normal');
   metrics.push({
     name: 'mac_battery_healthy',
@@ -367,7 +380,7 @@ function getSystemMetrics(): Metric[] {
   const metrics: Metric[] = [];
 
   // Uptime in seconds
-  const uptimeOutput = exec('sysctl -n kern.boottime');
+  const uptimeOutput = exec(`${CMD.sysctl} -n kern.boottime`);
   const bootMatch = uptimeOutput.match(/sec = (\d+)/);
   if (bootMatch) {
     const bootTime = parseInt(bootMatch[1]);
@@ -380,7 +393,7 @@ function getSystemMetrics(): Metric[] {
   }
 
   // Process count
-  const processCount = exec('ps aux | wc -l');
+  const processCount = exec(`${CMD.ps} aux | /usr/bin/wc -l`);
   metrics.push({
     name: 'mac_processes_total',
     value: parseInt(processCount) - 1, // Subtract header line
@@ -388,7 +401,7 @@ function getSystemMetrics(): Metric[] {
   });
 
   // Swap usage
-  const swapOutput = exec('sysctl -n vm.swapusage');
+  const swapOutput = exec(`${CMD.sysctl} -n vm.swapusage`);
   const swapMatch = swapOutput.match(/used = ([\d.]+)([MG])/);
   if (swapMatch) {
     let swapUsed = parseFloat(swapMatch[1]);
