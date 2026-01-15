@@ -177,6 +177,82 @@ function countSessionFiles(): number {
   return count;
 }
 
+// Real-time stats from session JSONL files
+interface RealTimeStats {
+  totalMessages: number;
+  totalToolCalls: number;
+  activeSessionLines: number;
+  sessionFileCount: number;
+  agentFileCount: number;
+  largestSessionSize: number;
+}
+
+function computeRealTimeStats(): RealTimeStats {
+  const projectsDir = `${CLAUDE_DIR}/projects`;
+  const stats: RealTimeStats = {
+    totalMessages: 0,
+    totalToolCalls: 0,
+    activeSessionLines: 0,
+    sessionFileCount: 0,
+    agentFileCount: 0,
+    largestSessionSize: 0
+  };
+
+  if (!existsSync(projectsDir)) return stats;
+
+  try {
+    const projects = readdirSync(projectsDir);
+    for (const project of projects) {
+      const projectPath = resolve(projectsDir, project);
+      const files = readdirSync(projectPath);
+
+      for (const file of files) {
+        if (!file.endsWith('.jsonl')) continue;
+        const filePath = resolve(projectPath, file);
+
+        try {
+          const content = readFileSync(filePath, 'utf-8');
+          const lines = content.trim().split('\n').filter(l => l.length > 0);
+
+          if (file.startsWith('agent-')) {
+            stats.agentFileCount++;
+          } else if (file.match(/^[a-f0-9-]{36}\.jsonl$/)) {
+            stats.sessionFileCount++;
+            stats.activeSessionLines += lines.length;
+
+            // Track largest session
+            const fileSize = statSync(filePath).size;
+            if (fileSize > stats.largestSessionSize) {
+              stats.largestSessionSize = fileSize;
+            }
+
+            // Count messages and tool calls from JSONL
+            for (const line of lines) {
+              try {
+                const entry = JSON.parse(line);
+                if (entry.type === 'human' || entry.type === 'assistant') {
+                  stats.totalMessages++;
+                }
+                if (entry.type === 'tool_use' || entry.type === 'tool_result') {
+                  stats.totalToolCalls++;
+                }
+              } catch {
+                // Skip invalid JSON lines
+              }
+            }
+          }
+        } catch {
+          // Skip unreadable files
+        }
+      }
+    }
+  } catch {
+    // Ignore errors
+  }
+
+  return stats;
+}
+
 function getStatsTimestamp(): number {
   const now = Date.now();
   const oneHourMs = 60 * 60 * 1000;
@@ -380,6 +456,51 @@ function collectMetrics(): Metric[] {
       timestamp: now
     });
   }
+
+  // Real-time stats computed from JSONL files (updates every push)
+  const realTimeStats = computeRealTimeStats();
+
+  metrics.push({
+    name: 'pai_realtime_messages',
+    value: realTimeStats.totalMessages,
+    help: 'Real-time message count from session files',
+    timestamp: now
+  });
+
+  metrics.push({
+    name: 'pai_realtime_tool_calls',
+    value: realTimeStats.totalToolCalls,
+    help: 'Real-time tool call count from session files',
+    timestamp: now
+  });
+
+  metrics.push({
+    name: 'pai_session_lines_total',
+    value: realTimeStats.activeSessionLines,
+    help: 'Total lines across all session JSONL files',
+    timestamp: now
+  });
+
+  metrics.push({
+    name: 'pai_session_jsonl_count',
+    value: realTimeStats.sessionFileCount,
+    help: 'Number of session JSONL files',
+    timestamp: now
+  });
+
+  metrics.push({
+    name: 'pai_agent_files_total',
+    value: realTimeStats.agentFileCount,
+    help: 'Total agent JSONL files',
+    timestamp: now
+  });
+
+  metrics.push({
+    name: 'pai_largest_session_bytes',
+    value: realTimeStats.largestSessionSize,
+    help: 'Size of largest session file in bytes',
+    timestamp: now
+  });
 
   return metrics;
 }
