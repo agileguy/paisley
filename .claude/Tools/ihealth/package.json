@@ -10,7 +10,10 @@
     "start": "bun run ihealth.ts",
     "typecheck": "bun x tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "protobufjs": "^8.0.0",
+    "snappyjs": "^0.7.0"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.0.0"
