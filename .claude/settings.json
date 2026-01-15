@@ -147,6 +147,10 @@
           {
             "type": "command",
             "command": "${PAI_DIR}/Hooks/capture-all-events.ts --event-type SessionStart"
+          },
+          {
+            "type": "command",
+            "command": "${PAI_DIR}/Hooks/start-observability.ts"
           }
         ]
       }
