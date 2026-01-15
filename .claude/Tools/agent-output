@@ -1,0 +1,243 @@
+#!/usr/bin/env bun
+
+/**
+ * agent-output - Retrieve output from completed Task agents
+ *
+ * Usage:
+ *   agent-output <agent-id>           # Get final text output from agent
+ *   agent-output <agent-id> --raw     # Get raw JSONL content
+ *   agent-output <agent-id> --summary # Get just the summary/completion message
+ *   agent-output --list               # List all agent outputs in current session
+ *
+ * This tool works around the TaskOutput limitation where agent IDs from
+ * synchronous Task completions aren't recognized.
+ */
+
+import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
+import { resolve, basename } from 'path';
+
+const TASKS_DIR = '/tmp/claude';
+const CLAUDE_PROJECTS = `${process.env.HOME}/.claude/projects`;
+
+interface AgentMessage {
+  type: string;
+  message?: {
+    role: string;
+    content: Array<{
+      type: string;
+      text?: string;
+      name?: string;
+      input?: unknown;
+    }>;
+  };
+}
+
+function findAgentFile(agentId: string): string | null {
+  // Strategy 1: Check /tmp/claude/*/tasks/ for symlinks
+  if (existsSync(TASKS_DIR)) {
+    const projectDirs = readdirSync(TASKS_DIR);
+    for (const projectDir of projectDirs) {
+      const tasksPath = resolve(TASKS_DIR, projectDir, 'tasks');
+      if (existsSync(tasksPath)) {
+        const outputFile = resolve(tasksPath, `${agentId}.output`);
+        if (existsSync(outputFile)) {
+          // Follow symlink to actual file
+          const realPath = readFileSync(outputFile, 'utf-8').trim() ||
+            resolve(tasksPath, readFileSync(outputFile).toString());
+          try {
+            const stats = statSync(outputFile);
+            if (stats.isSymbolicLink || existsSync(outputFile)) {
+              return outputFile;
+            }
+          } catch {
+            // Try reading anyway
+            return outputFile;
+          }
+        }
+      }
+    }
+  }
+
+  // Strategy 2: Search claude projects for subagent files
+  if (existsSync(CLAUDE_PROJECTS)) {
+    const searchDirs = readdirSync(CLAUDE_PROJECTS);
+    for (const projectDir of searchDirs) {
+      const projectPath = resolve(CLAUDE_PROJECTS, projectDir);
+      const sessionDirs = readdirSync(projectPath).filter(d =>
+        d.match(/^[a-f0-9-]{36}$/)
+      );
+
+      for (const sessionDir of sessionDirs) {
+        const subagentsPath = resolve(projectPath, sessionDir, 'subagents');
+        if (existsSync(subagentsPath)) {
+          const agentFile = resolve(subagentsPath, `agent-${agentId}.jsonl`);
+          if (existsSync(agentFile)) {
+            return agentFile;
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractFinalOutput(jsonlPath: string): string {
+  const content = readFileSync(jsonlPath, 'utf-8');
+  const lines = content.trim().split('\n');
+
+  // Find the last assistant message with text content
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const entry: AgentMessage = JSON.parse(lines[i]);
+      if (entry.type === 'assistant' && entry.message?.content) {
+        for (const block of entry.message.content) {
+          if (block.type === 'text' && block.text) {
+            return block.text;
+          }
+        }
+      }
+    } catch {
+      // Skip invalid JSON lines
+    }
+  }
+
+  return 'No text output found in agent transcript';
+}
+
+function extractSummary(jsonlPath: string): string {
+  const output = extractFinalOutput(jsonlPath);
+
+  // Look for common summary patterns
+  const patterns = [
+    /🗣️\s*CUSTOM\s+COMPLETED:\s*(.+?)(?:\n|$)/im,
+    /🎯\s*COMPLETED:\s*(.+?)(?:\n|$)/im,
+    /COMPLETED:\s*(.+?)(?:\n|$)/im,
+    /## Summary\n(.+?)(?:\n##|\n---|\n\n\n|$)/is,
+    /SUMMARY:\s*(.+?)(?:\n[A-Z]+:|$)/is,
+  ];
+
+  for (const pattern of patterns) {
+    const match = output.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim().substring(0, 500);
+    }
+  }
+
+  // Return first 500 chars as fallback
+  return output.substring(0, 500) + (output.length > 500 ? '...' : '');
+}
+
+function listAgents(): void {
+  console.log('📋 Agent outputs in current session:\n');
+
+  let found = false;
+
+  if (existsSync(TASKS_DIR)) {
+    const projectDirs = readdirSync(TASKS_DIR);
+    for (const projectDir of projectDirs) {
+      const tasksPath = resolve(TASKS_DIR, projectDir, 'tasks');
+      if (existsSync(tasksPath)) {
+        const files = readdirSync(tasksPath).filter(f => f.endsWith('.output'));
+        for (const file of files) {
+          const agentId = basename(file, '.output');
+          const filePath = resolve(tasksPath, file);
+          try {
+            const stats = statSync(filePath);
+            const size = stats.size > 0 ? `${(stats.size / 1024).toFixed(1)}KB` : 'symlink';
+            console.log(`  ${agentId}  (${size})`);
+            found = true;
+          } catch {
+            console.log(`  ${agentId}  (unreadable)`);
+          }
+        }
+      }
+    }
+  }
+
+  if (!found) {
+    console.log('  No agent outputs found');
+  }
+}
+
+// Main
+const args = process.argv.slice(2);
+
+if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+  console.log(`
+agent-output - Retrieve output from completed Task agents
+
+Usage:
+  agent-output <agent-id>           Get final text output from agent
+  agent-output <agent-id> --raw     Get raw JSONL content
+  agent-output <agent-id> --summary Get just the summary/completion message
+  agent-output --list               List all agent outputs in current session
+
+Examples:
+  agent-output a177d29
+  agent-output a177d29 --summary
+  agent-output --list
+`);
+  process.exit(0);
+}
+
+if (args[0] === '--list') {
+  listAgents();
+  process.exit(0);
+}
+
+const agentId = args[0];
+const mode = args[1] || '--full';
+
+const agentFile = findAgentFile(agentId);
+
+if (!agentFile) {
+  console.error(`❌ No output found for agent: ${agentId}`);
+  console.error('\nTip: Use "agent-output --list" to see available agents');
+  process.exit(1);
+}
+
+// Read the actual content (follow symlink)
+let actualPath = agentFile;
+try {
+  // If it's a symlink, read where it points
+  const linkTarget = readFileSync(agentFile, 'utf-8');
+  if (existsSync(linkTarget.trim())) {
+    actualPath = linkTarget.trim();
+  }
+} catch {
+  // Not a text symlink, try reading directly
+}
+
+// Check if the symlink target exists
+if (!existsSync(actualPath)) {
+  // Try the standard subagent path pattern
+  const projectDirs = readdirSync(CLAUDE_PROJECTS);
+  for (const projectDir of projectDirs) {
+    const projectPath = resolve(CLAUDE_PROJECTS, projectDir);
+    const sessionDirs = readdirSync(projectPath).filter(d => d.match(/^[a-f0-9-]{36}$/));
+    for (const sessionDir of sessionDirs) {
+      const subagentPath = resolve(projectPath, sessionDir, 'subagents', `agent-${agentId}.jsonl`);
+      if (existsSync(subagentPath)) {
+        actualPath = subagentPath;
+        break;
+      }
+    }
+  }
+}
+
+if (!existsSync(actualPath)) {
+  console.error(`❌ Agent file not readable: ${actualPath}`);
+  process.exit(1);
+}
+
+switch (mode) {
+  case '--raw':
+    console.log(readFileSync(actualPath, 'utf-8'));
+    break;
+  case '--summary':
+    console.log(extractSummary(actualPath));
+    break;
+  default:
+    console.log(extractFinalOutput(actualPath));
+}

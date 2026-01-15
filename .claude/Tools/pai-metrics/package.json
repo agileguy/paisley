@@ -1,0 +1,13 @@
+{
+  "name": "pai-metrics",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run pai-metrics.ts",
+    "dry-run": "bun run pai-metrics.ts --dry-run"
+  },
+  "dependencies": {
+    "protobufjs": "^7.4.0",
+    "snappyjs": "^0.7.0"
+  }
+}
