@@ -63,6 +63,11 @@
 - Removed unused repos: calendar-mcp, cards, game-time, mcp-gke-log-server, three-stooges
 - Removed old `~/pai` directory
 
+### 10. CNI Dev Grafana Alerts Update
+- Removed 7 old Dumbo alerts from cni-dev Grafana
+- Added 8 new alerts from `~/Downloads/dumbo-new.json`
+- Used grafana-alert-provisioner scripts (add-alert.py, remove-alert.py)
+
 ---
 
 ## Key Files Modified
