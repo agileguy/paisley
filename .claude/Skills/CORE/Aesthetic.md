@@ -399,3 +399,260 @@ Reference in any markdown conversion:
 ```bash
 bunx md-to-pdf document.md --stylesheet ~/.claude/Skills/CORE/pdf-styles.css
 ```
+
+---
+
+## Chrome Headless PDF Generation
+
+For complex documents with embedded SVGs, images, and custom layouts, use Chrome headless for pixel-perfect PDF output.
+
+### Chrome Headless Command
+
+```bash
+# Single file
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless \
+  --disable-gpu \
+  --no-pdf-header-footer \
+  --print-to-pdf="output.pdf" \
+  "file://$(pwd)/input.html"
+
+# Batch conversion
+cd /path/to/html && for f in *.html; do \
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --headless --disable-gpu --no-pdf-header-footer \
+    --print-to-pdf="${f%.html}.pdf" "file://$(pwd)/$f" 2>/dev/null && \
+  echo "Created: ${f%.html}.pdf"; \
+done
+```
+
+### Key Chrome Flags
+
+| Flag | Purpose |
+|------|---------|
+| `--headless` | Run without UI |
+| `--disable-gpu` | Prevent GPU-related issues |
+| `--no-pdf-header-footer` | **CRITICAL**: Removes browser date/URL/page numbers |
+| `--print-to-pdf="file.pdf"` | Output path |
+
+### Print-Ready HTML Template
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Title</title>
+  <style>
+    @page {
+      margin: 0.6in;
+      size: letter;
+    }
+
+    @media print {
+      html, body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #333;
+      max-width: 7in;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 22pt;
+      color: #2d5a3d;
+      border-bottom: 3px solid #2d5a3d;
+      padding-bottom: 8px;
+      margin-bottom: 5px;
+    }
+
+    h2 {
+      font-size: 14pt;
+      color: #3d7a5d;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+    }
+
+    h3 {
+      font-size: 12pt;
+      color: #4d8a6d;
+      margin-top: 15px;
+      margin-bottom: 8px;
+    }
+
+    p { margin-bottom: 10px; }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    li { margin-bottom: 5px; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 15px 0;
+      font-size: 10pt;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f5f5;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) { background: #fafafa; }
+
+    blockquote {
+      border-left: 3px solid #2d5a3d;
+      padding-left: 15px;
+      margin: 15px 0;
+      color: #555;
+      font-style: italic;
+    }
+
+    /* Image containers for embedded SVGs */
+    .image-container {
+      text-align: center;
+      margin: 20px 0;
+      padding: 15px;
+      background: #fafafa;
+      border-radius: 8px;
+    }
+
+    .image-container img,
+    .image-container svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Callout boxes */
+    .safety-box {
+      background: #fff8e6;
+      border: 1px solid #f0c36d;
+      border-left: 4px solid #e6a817;
+      padding: 12px 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+
+    .tip-box {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      border-left: 4px solid #2d5a3d;
+      padding: 12px 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      font-size: 9pt;
+      color: #888;
+      font-style: italic;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Content here -->
+</body>
+</html>
+```
+
+### SVG Best Practices for PDFs
+
+1. **Split long text labels** - Break multi-word labels into separate `<text>` elements:
+   ```xml
+   <!-- BAD: May get clipped -->
+   <text x="158" y="100">Shoulders relaxed</text>
+
+   <!-- GOOD: Split into lines -->
+   <text x="158" y="98">Shoulders</text>
+   <text x="158" y="108">relaxed</text>
+   ```
+
+2. **Use viewBox for scaling** - Always include viewBox for responsive sizing:
+   ```xml
+   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" width="450" height="300">
+   ```
+
+3. **Embed SVGs directly** - Inline SVGs render better than `<img>` references:
+   ```html
+   <div class="image-container">
+     <svg><!-- Full SVG content --></svg>
+   </div>
+   ```
+
+4. **Light backgrounds for print** - Use `fill="#f8f9fa"` for SVG backgrounds (prints well)
+
+### TypeScript/Bun Generator Pattern
+
+For batch PDF generation with embedded images:
+
+```typescript
+#!/usr/bin/env bun
+import { readdir, readFile, writeFile, mkdir } from "fs/promises";
+import { join, basename } from "path";
+import { existsSync } from "fs";
+
+const CSS = `/* Print CSS here */`;
+
+// Map lessons to their images
+const lessonImages: Record<string, string[]> = {
+  "lesson-01": ["diagram-1.svg"],
+  "lesson-02": ["diagram-2.svg", "diagram-3.svg"],
+};
+
+async function loadSvg(filename: string): Promise<string> {
+  const path = join(IMAGES_DIR, filename);
+  return existsSync(path) ? await readFile(path, 'utf-8') : '';
+}
+
+async function generateHtml(mdContent: string, lessonName: string): Promise<string> {
+  const images = lessonImages[lessonName] || [];
+  let imageHtml = '';
+
+  for (const img of images) {
+    const svg = await loadSvg(img);
+    if (svg) imageHtml += `<div class="image-container">${svg}</div>\n`;
+  }
+
+  // Convert markdown to HTML and inject images
+  return `<!DOCTYPE html>...${imageHtml}...`;
+}
+```
+
+### Workflow Summary
+
+1. **Write content** in Markdown
+2. **Create SVGs** for diagrams (use viewBox, split long labels)
+3. **Generate HTML** with embedded CSS and inline SVGs
+4. **Convert to PDF** with Chrome headless using `--no-pdf-header-footer`
